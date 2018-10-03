@@ -58,7 +58,6 @@ def gcal_lookup():
     if nwtm.hour!=23:
         range_beg=int(nwtm.hour)+1
         range_beg*=100
-    range_beg=1600
     tmp_splt=sleeptime.split(':')
     range_end=int(tmp_splt[0]+tmp_splt[1])
     avb_slots=[]
@@ -66,8 +65,10 @@ def gcal_lookup():
     while range_beg<=range_end and range_beg!=2300:
         if len(blocked)!=0:
             for elem in blocked:
-                if range_beg!=elem[0]:
+                if range_beg!=elem[0] and range_beg>=elem[0]:
                     avb_slots.append((range_beg,range_beg+step))
+                    range_beg+=step
+                    continue
         else:
             avb_slots.append((range_beg,range_beg+step))
         range_beg+=step
@@ -97,7 +98,7 @@ def gcal_lookup():
         flow = client.flow_from_clientsecrets('credentials.json',SCOPES2)
         creds=tools.run_flow(flow,store)
     service2 = build('gmail', 'v1', http=creds.authorize(Http()))
-    results = service2.users().messages().list(userId='me',maxResults=20).execute()
+    results = service2.users().messages().list(userId='me',maxResults=5).execute()
     labels = results.get('labels', [])
     mail_subjects=[]
     for element in results['messages']:
@@ -112,7 +113,7 @@ def gcal_lookup():
     dict_mail={}
     for key in list(mail_subjects):
         dict_mail[key]=mail_subjects.count(key)
-    dict_mail={"politics": 3, "economy": 1, "science-environment": 1, "technology": 12}
     output['categories']=dict_mail
+
     rs =Response(json.dumps(output),status=200,mimetype="application/json")
     return rs
